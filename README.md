@@ -72,4 +72,6 @@ q = model.query(
         )
 ```
 
-`OctoRAG_MCP.query` returns an async generator that contains all the messages returned by the multi-
+`OctoRAG_MCP.query` returns an async generator that contains all the messages returned by the multi-agent workflow.
+
+You can see the results of running this code block [here](https://github.com/Akhil841/nba-stats-prediction-api-3422643/)!
