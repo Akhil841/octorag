@@ -1,4 +1,4 @@
-# octorag
+# OctoRAG
 Lightweight agent that uses GitHub Search API to do RAG for tasks such as recommending projects and libraries, and generating code with its selections. Written in Python using LangGraph.
 
 ## Dependencies
@@ -38,7 +38,7 @@ model.query("I need an open-source raytracer for a bigger project I'm working on
 
 ### As a library, connecting to an MCP server
 
-Your MCP server needs to have a `.env` file containing your `GH_ACCESS_TOKEN` (or otherwise have it set), and it must expose the tools implemented in `octorag_mcp_server.py`. If you are using a `.env` file, it must be in the same directory as the tools in that file. You can do choose to either integrate the code in that file into your existing server workflow, or by simply running the file.
+Your MCP server needs to have a `.env` file containing your `GH_ACCESS_TOKEN` (or otherwise have it set), and it must expose the tools implemented in `octorag_mcp_server.py`. If you are using a `.env` file, it must be in the same directory as the tools in that file. You can choose to either integrate the code in that file into your existing server workflow, or instantiate an MCP server with these tools by simply running the file.
 
 OctoRAG has an inbuilt MCP client that connects the Anthropic model to the tools. So on your client device, you must have a `.env` file containing your `ANTHROPIC_API_KEY` before querying your MCP server. The client-side code should look like this.
 
