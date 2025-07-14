@@ -1,5 +1,5 @@
 # OctoRAG
-Lightweight agent that uses GitHub Search API to do RAG for tasks such as recommending projects and libraries, and generating code with its selections. Written in Python using LangGraph.
+Lightweight agents that use GitHub Search API to do RAG for tasks such as recommending projects and libraries, and generating code with their selections that they then publishes to GitHub as a private repository. Written in Python using LangGraph.
 
 ## Dependencies
 - `httpx==0.28.1`
@@ -14,46 +14,62 @@ Lightweight agent that uses GitHub Search API to do RAG for tasks such as recomm
 
 You can install these using the `requirements.txt` file in the root directory. This would be `pip install -r requirements.txt` if using pip from the root directory.
 
+## Features
+At present, large language models are limited to the knowledge they have been trained on when they write responses. This library provides agentic extensions that allow a model to:
+- Browse GitHub for repositories based on natural language keywords
+- Retrieve the full file tree of a GitHub repository
+- Read arbitrary files inside of a repository
+- Create (private) repositories
+- Upload files to repositories
+
+In addition, it provides a prompt-to-code workflow that can go straight to a prompt to a full repository with code written to implement said prompt uploaded privately to GitHub. This exists as a single-agent local application, or as a multi-agent MCP client that connects to an MCP server hosting the tools. 
+
 ## Usage
-OctoRAG offers three different ways to run it:
-- As a function call from a library that runs the tools it needs locally
-- As a function call from a library that calls its tools from your MCP server
-- As a command-line application that runs its tools locally
+OctoRAG can be run locally (as a single agent), or as a client that connects to an MCP server (as a multi-agent workflow). **It is strongly advised to do the latter, as the MCP client implements a multi-agent workflow instead of a single agent. This makes the model's running more robust and improves the code quality.**
 
-For all of these, you need a `.env` file which has a `ANTHROPIC_API_KEY` (for querying the model) and a `GH_ACCESS_TOKEN` (for browsing GitHub) set. Or, you must otherwise set them yourself before running.
+### Running OctoRAG locally
+You need a `.env` file that contains the following:
+- `ANTHROPIC_API_KEY`: Your Anthropic key that is used to query large language models.
+- `GH_ACCESS_TOKEN`: A GitHub access token. This token should have permissions to search GitHub for repositories, via API calls. If you wish for the model to be able to upload the generated code to GitHub, this token must also have permissions to create and manage repositories you own. OctoRAG will NOT access any repositories other than the one it creates to contain your code. You can check the code at `octorag_mcp_client.py` yourself to see the system prompts!
 
-### As a library, using local tools
-Instantiate OctoRAG using the following:
+From there, simply do the following to query the model!
+```python
+from octorag import OctoRAG
+
+model = OctoRAG(
+    path_to_env_file = "path/to/env/file" # location of your .env file. Looks in root directory by default
+)
+
+q = model.query(
+    "I need an open-source raytracer for a bigger project I'm working on. It needs to be able to be called as a library, like I can just call a `raytrace()` function and it draws the input scene for me. I'm working in Rust. Give me a single up-to-date recommendations."
+)
 ```
-from octorag.octorag import OctoRAG
 
-model = OctoRAG("path/to/env/file") # Looks for a .env file in the root directory by default
-```
+## Running OctoRAG as an MCP client
+You must first provision an MCP server that implements the tools in `octorag_mcp_server.py`. This server will need a GitHub access token stored as an environment variable `GH_ACCESS_TOKEN`. 
 
-And query the model using the `query` method:
+The simplest way to do this is to simply copy and run `octorag_mcp_server.py` on your server. It will need a `.env` file containing the following:
+- `GH_ACCESS_TOKEN`: A GitHub access token. This token should have permissions to search GitHub for repositories, via API calls. If you wish for the model to be able to upload the generated code to GitHub, this token must also have permissions to create and manage repositories you own. OctoRAG will NOT access any repositories other than the one it creates to contain your code. You can check the code at `octorag_mcp_client.py` yourself to see the system prompts!
 
-```
-model.query("I need an open-source raytracer for a bigger project I'm working on. It needs to be able to be called as a library, like I can just call a `raytrace()` function and it draws the input scene for me. I'm working in Rust. Give me a single up-to-date recommendations.")
-```
+To use this MCP server, you need a `.env` file containing the following in the pace where you wish to store the client:
+- `ANTHROPIC_API_KEY`: Your Anthropic key that is used to query large language models.
 
-### As a library, connecting to an MCP server
-
-Your MCP server needs to have a `.env` file containing your `GH_ACCESS_TOKEN` (or otherwise have it set), and it must expose the tools implemented in `octorag_mcp_server.py`. If you are using a `.env` file, it must be in the same directory as the tools in that file. You can choose to either integrate the code in that file into your existing server workflow, or instantiate an MCP server with these tools by simply running the file.
-
-OctoRAG has an inbuilt MCP client that connects the Anthropic model to the tools. So on your client device, you must have a `.env` file containing your `ANTHROPIC_API_KEY` before querying your MCP server. The client-side code should look like this.
-
-```
-from octorag.octorag_mcp_client import OctoRAG_MCP
+From there, you can simply do the following:
+```python
+from octorag_mcp_client import OctoRAG_MCP
 
 model = OctoRAG_MCP(
-    path_to_env_file = '/path/to/env/file/', # defaults to looking in root directory
-    mcp_url = 'https://url.of.your.mcp.server.api' # defaults to https://localhost:8000/mcp 
-) # instantiates model, ready for querying
+    path_to_env_file = "path/to/env/file", # location of your .env file. Looks in root directory by default
+    mcp_url = "http://your-mcp-server.com/mcp/endpoint", # location of your MCP server. Defaults to http://localhost:8000/mcp, the endpoint location of octorag_mcp_server.py
+    debug = False # Set if you want the messages that call tools. Default False. It can be reset on the fly at model.debug.
+)
 
-await model.query("Give me a Balatro mod from GitHub to spice up my playthrough.")
+
+q = model.query(
+            "Write code in Python to create a HTTP server that can handle GET and POST requests"
+            " It should be able to retrieve stats of NBA players from the NBA API when asked."
+            " And it should predict the probability of a team winning a game against another team, based on the stats of the players."
+        )
 ```
 
-The `OctoRAG_MCP.query` method returns an `AsyncGenerator` that iteratively returns all the messages the AI prints, as `str`s.
-
-### As a command-line application
-Install the OctoRag application using `pip install .` in the root directory. From there, you can query OctoRAG simply by entering `octorag` in the command line!
+`OctoRAG_MCP.query` returns an async generator that contains all the messages returned by the multi-

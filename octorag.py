@@ -41,9 +41,20 @@ class OctoRAG:
             get_readme,
             get_repo_tree,
             get_file_contents,
+            create_repo,
+            create_file,
+            append_to_file,
         )
 
-        tools = [query_for_github_repos, get_readme, get_repo_tree, get_file_contents]
+        tools = [
+            query_for_github_repos,
+            get_readme,
+            get_repo_tree,
+            get_file_contents,
+            create_repo,
+            create_file,
+            append_to_file,
+        ]
 
         llm = llm.bind_tools(tools)
 

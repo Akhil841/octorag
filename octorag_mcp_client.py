@@ -29,7 +29,10 @@ class OctoRAG_MCP:
         current_agent: str | None
 
     def __init__(
-        self, path_to_env_file: str = None, mcp_url: str = "http://localhost:8000/mcp"
+        self,
+        path_to_env_file: str = None,
+        mcp_url: str = "http://localhost:8000/mcp",
+        debug: bool = False,
     ):
         self.memory = MemorySaver()
 
@@ -127,6 +130,8 @@ class OctoRAG_MCP:
                 }
             }
         )
+
+        self.debug = debug
 
     async def create_graph(self, session):
         tools = await load_mcp_tools(session)
@@ -257,9 +262,10 @@ class OctoRAG_MCP:
                 raise ValueError(
                     f"No messages found in input state to tool_edge: {state}"
                 )
-            print(
-                f"Current agent: {state['current_agent']}, tool_calls: {getattr(ai_message, 'tool_calls', None)} content: {ai_message.content if hasattr(ai_message, 'content') else None}"
-            )
+            if self.debug:
+                print(
+                    f"Current agent: {state['current_agent']}, tool_calls: {getattr(ai_message, 'tool_calls', None)} content: {ai_message.content if hasattr(ai_message, 'content') else None}"
+                )
             if hasattr(ai_message, "tool_calls") and len(ai_message.tool_calls) > 0:
                 return state["current_agent"] + "_tools"
             content = ai_message.content
