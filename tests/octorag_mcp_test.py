@@ -1,4 +1,4 @@
-from octorag_mcp_client import OctoRAG_MCP
+from octorag.octorag_mcp_client import OctoRAG_MCP
 import asyncio
 
 model = OctoRAG_MCP()
