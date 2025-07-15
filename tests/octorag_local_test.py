@@ -1,4 +1,4 @@
-from octorag import OctoRAG
+from octorag.octorag import OctoRAG
 
 model = OctoRAG()
 
